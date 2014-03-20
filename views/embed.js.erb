@@ -1,0 +1,97 @@
+// Anonymous "self-invoking" function
+(function() {
+    function commentToHTML(comment){
+        return "<div class='jekyll-comment'>" +
+                    "<div class='jekyll-comment-name'>" +
+                        comment['name'] +
+                    "</div>" +
+                    "<div class='jekyll-comment-date'>" +
+                        comment.date +
+                    "</div>" +
+                    "<div class='jekyll-comment-comment'>" +
+                        comment.comment +
+                    "</div>" +
+                "</div>"
+    };
+    function resetForm(){
+        ['name', 'email', 'comment'].forEach(function(i){
+            $('.jekyll-comments-form-' + i).val('');
+        });
+    };
+    function embed($){
+        if ($('.jekyll-comments').length == 0) {
+            alert('You need to define a div with the class "jekyll-comments"');
+            return;
+        }
+        $('.jekyll-comments').append(
+                "<h2>Comments (<span class='jekyll-comments-count'></span>)</h2>" +
+                "<div class='jekyll-comments-form'>" +
+                    "<form class='jekyll-comments-form-form'>" +
+                        "<input type='hidden' name='url' value='" + document.URL + "' />" +
+                        "<label>Name: </label><input type='text' class='jekyll-comments-form-name' name='name' />" +
+                        "<label>Email: </label><input type='text' class='jekyll-comments-form-email' name='email' />" +
+                        "<label>Comment: </label><textarea class='jekyll-comments-form-comment' name='comment'></textarea>" +
+                    "</form>" +
+                "</div>" +
+                "<div class='jekyll-comments-list'>" +
+                "</div>"
+        );
+        var btn = $('<button class="jekyll-comments-form-form-submit">Comment</button>');
+        btn.on('click', function(){
+            var errors = [];
+            var name = $('.jekyll-comments-form-name').val();
+            var email = $('.jekyll-comments-form-email').val();
+            var comment = $('.jekyll-comments-form-comment').val();
+            if (name.length == 0) { errors.push("Name is required"); }
+            if (email.length == 0) { errors.push("Email is required"); }
+            if (comment.length == 0) { errors.push("Comment is required"); }
+            if (errors.length > 0) {
+                alert(errors.join(", "));
+            } else {
+                $.ajax({
+                    type: 'POST',
+                    url: '<%= host %>/api/comment',
+                    data: $('.jekyll-comments-form-form').serialize()
+                }).done(function(data){
+                    $('.jekyll-comments-count').html(data.count);
+                    $('.jekyll-comments-list').append(commentToHTML(data.comment));
+                    resetForm();
+                });
+            }
+            return false;
+        });
+        $('.jekyll-comments-form-form').append(btn);
+        $.ajax({
+            url: '<%= host %>/api/comments/' + document.URL,
+        }).done(function(data){
+            $('.jekyll-comments-count').html(data.count);
+            $(data.comments).each(function(){
+                $('.jekyll-comments-list').append(commentToHTML(this));
+            });
+        })
+    }
+
+    // Load the script
+    if (!window.jQuery) {
+        var script = document.createElement("SCRIPT");
+        script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js';
+        script.type = 'text/javascript';
+        document.getElementsByTagName("head")[0].appendChild(script);
+
+        // Poll for jQuery to come into existance
+        var checkReady = function(callback) {
+            if (window.jQuery) {
+                callback(jQuery);
+            }
+            else {
+                window.setTimeout(function() { checkReady(callback); }, 20);
+            }
+        };
+
+        // Start polling...
+        checkReady(function($){ embed($); });
+    } else { embed(window.jQuery); }
+})();
+
+// http://facebook.com/anders.tornblad
+// anders.tornblad@gmail.com

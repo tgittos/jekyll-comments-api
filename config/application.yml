@@ -1,0 +1,2 @@
+jekyll_dir: /Users/timg/src/personal/timgittos.com/ # The full path to the jekyll install
+host: http://localhost:3000 # The host of this comments API
